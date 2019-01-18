@@ -1,0 +1,102 @@
+<odoo>
+    <template id="dingtalk_connector.sign_in">
+        <script>
+            window.onload = function() {
+                var ua = window.navigator.userAgent.toLowerCase();
+                // 检测UA
+                if(ua.match(/DingTalk/i) == "dingtalk"){
+                    // 调用钉钉JSAPI
+                    dd.getAuthCode({
+                        success: (res)=>{
+                            windows.location = "/dingtalk/auth?authCode=" + res.authCode;
+                        },
+                        fail: (err)=>{
+                            alert("系统错误，请重试。");
+                        }
+                    });
+                } else {
+                    window.location = "/";
+                }
+            }
+        </script>
+    </template>
+    <template id="dingtalk_connector.sign_up">
+		<style>
+			main {
+				margin:auto;
+				margin-top: 60px;
+				padding: 20px;
+				max-width: 300px;
+			}
+			input {
+				display: block;
+				box-sizing: border-box;
+				padding: 10px;
+                width: 100%;
+                font-size: 18px;
+				border: 1px #aaa solid;
+                border-radius: 2px;
+			}
+            button {
+				display:block;
+				margin: auto;
+				margin-top: 60px;
+                padding: 10px 0;
+				width: 100%;
+				color: #fff;
+				background: #08f;
+				border: none;
+                border-radius: 2px;
+                transition: 0.2s;
+			}
+            button:hover {
+                filter: brightness(80%);
+            }
+            .button-disabled {
+                color: #aaa;
+                background: #eee;
+            }
+            input:focus, button:focus {
+                outline: none;
+            }
+		</style>
+		<main>
+			<h1>Hi!<t t-esc="name"/></h1>
+            <h4>您的Odoo账号已从钉钉同步，接下来请设置您的个人密码。</h4>
+			<form name="sign-up" method="post" action="/dingtalk/register" onsubmit="return validatePassword()">
+				<input id="password" name="password" type="password"/>
+				<button id="button" type="submit">继续</button>
+			</form>
+		</main>
+		<script>
+			function $(target) {
+				return document.querySelector(target);
+			}
+			function validatePassword(){
+				passwordInput = $("#password")
+				button = $("#button");
+				switchStatus(passwordInput, false);
+				switchStatus(button, false);
+                button.classList.add("button-disabled");
+                button.innerHTML = "请稍候";
+				if(passwordInput.value.length>=8) {
+					return true;
+				} else {
+                    alert('请设置8位或以上字符的密码');
+					switchStatus(passwordInput, true);
+					switchStatus(button, true);
+                    button.classList.remove("button-disabled");
+                    button.innerHTML = "继续";
+					return false;
+                }
+			}
+			function switchStatus(target, status) {
+				if(!status) {
+					target.setAttribute("disabled", "true");
+				} else {
+					target.removeAttribute("disabled");
+				}
+			}
+		</script>
+	</template>
+</odoo>

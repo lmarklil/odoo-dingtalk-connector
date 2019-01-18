@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- View -->
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.dingtalk_connector</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('settings')]" position="inside">
+                <div class="app_settings_block" data-string="钉钉" string="钉钉" data-key="dingtalk_connector"
+                     groups="base.group_system">
+                    <h2>基本参数</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-12 o_setting_box">
+                            基本参数是用于钉钉接口的身份认证，请务必填写，否则模块无法使用。其中corpId在<a href="https://open-dev.dingtalk.com/"
+                                                                        target="_blank">钉钉开放平台</a>获取，AppKey和AppSecret的获取方法请参考<a
+                                href="https://open-doc.dingtalk.com/microapp/serverapi2/eev437" target="_blank">开发文档</a>。
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="dingtalk_corp_id"/>
+                                <div class="content-group">
+                                    <div class="mt16">
+                                        <field name="dingtalk_corp_id"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="dingtalk_app_key"/>
+                                <div class="content-group">
+                                    <div class="mt16">
+                                        <field name="dingtalk_app_key"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="dingtalk_app_secret"/>
+                                <div class="content-group">
+                                    <div class="mt16">
+                                        <field name="dingtalk_app_secret"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <h2>业务回调接口</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-12 o_setting_box">
+                            通过业务回调接口，钉钉的企业数据会自动同步到Odoo。详情请参考<a
+                                href="https://open-doc.dingtalk.com/microapp/serverapi2/lo5n6i" target="_blank">开发文档</a>。
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <button class="oe_highlight" type="object" name="callback_api_register"
+                                    string="启用业务回调接口"/>
+                        </div>
+                    </div>
+                    <h2>免登配置</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-12 o_setting_box">
+                            <p>钉钉连接器提供了免登功能，将Odoo添加到钉钉的「工作台」后可以实现免密码快速登陆，Odoo+钉钉的办公组合更加完美。以下是配置的步骤说明：</p>
+                            <p>（1）在钉钉后台创建「自建应用」，创建过程请参考<a
+                                    href="https://open-doc.dingtalk.com/microapp/serverapi2/eev437" target="_blank">
+                                开发文档</a>。
+                            </p>
+                            <p>（2）在应用的首页地址设置为：你的Odoo域名/dingtalk/sign/in。</p>
+                        </div>
+                    </div>
+                    <h2>手动同步</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-12 o_setting_box">
+                            手动同步功能会从钉钉接口拉取所有的数据进行同步，若数据量大，同步需要的时间会比较长，请耐心等待。
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <button class="oe_highlight" type="object" name="update_users_and_departments"
+                                    string="同步成员与部门"/>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
