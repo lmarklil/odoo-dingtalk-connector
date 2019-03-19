@@ -5,10 +5,10 @@
     'description': """
         提供钉钉集成服务
 	""",
-    'author': "Li Jinhui",
+    'author': "Li jinhui",
     'website': "https://ocubexo.github.io",
     'category': 'Connector',
-    'version': '1.0',
+    'version': '1.5',
     'depends': ['hr'],
     'external_dependencies': {
         'python': ['pycryptodome']

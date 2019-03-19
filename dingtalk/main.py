@@ -3,9 +3,11 @@ import requests, json, time
 
 
 class DingTalk:
-    def __init__(self, app_key, app_secret):
+    def __init__(self, app_key=None, app_secret=None, sns_app_id=None, sns_app_secret=None):
         self.app_key = app_key
         self.app_secret = app_secret
+        self.sns_app_id = sns_app_id
+        self.sns_app_secret = sns_app_secret
 
     def send_request(self, method, request_url, data, retry=True, retry_count=0, retry_interval=3):
         """
@@ -26,9 +28,9 @@ class DingTalk:
                     time.sleep(retry_interval)
                     return self.send_request(method, request_url, data, retry_count=retry_count + 1)
                 else:
-                    raise Exception('（钉钉接口错误）' + result.get('errmsg'))
+                    raise Exception('（钉钉接口错误）' + result.get('errmsg') + ' | （接口地址）' + request_url)
             else:
-                raise Exception('（钉钉接口错误）' + result.get('errmsg'))
+                raise Exception('（钉钉接口错误）' + result.get('errmsg') + ' | （接口地址）' + request_url)
         else:
             return result
 
@@ -78,7 +80,7 @@ class DingTalk:
         url = 'https://oapi.dingtalk.com/topapi/smartwork/hrm/employee/list' + self.get_access_token_param()
         data = {
             'userid_list': user_ids,
-            'field_filter_list': "sys00-name,sys00-email,sys00-mainDept,sys00-mobile",
+            'field_filter_list': "sys00-name,sys00-email,sys00-dept,sys00-mainDept,sys00-mobile",
         }
         result = self.send_request(method, url, data)
         return result
@@ -92,6 +94,75 @@ class DingTalk:
         params = {
             'access_token': self.get_access_token(),
             'code': auth_code
+        }
+        result = self.send_request(method, url, params)
+        return result
+
+    def get_sns_access_token_data(self):
+        """
+        获取SNSAccessToken
+        """
+        method = 'GET'
+        url = 'https://oapi.dingtalk.com/sns/gettoken'
+        params = {
+            'appid': self.sns_app_id,
+            'appsecret': self.sns_app_secret
+        }
+        result = self.send_request(method, url, params)
+        return result
+
+    def get_sns_access_token(self):
+        return self.get_sns_access_token_data().get('access_token')
+
+    def get_sns_access_token_param(self):
+        return '?access_token=' + self.get_sns_access_token()
+
+    def get_sns_persistent_code(self, code):
+        """
+        获取SNSPersistentCode
+        """
+        method = 'POST'
+        url = 'https://oapi.dingtalk.com/sns/get_persistent_code' + self.get_sns_access_token_param()
+        data = {
+            'tmp_auth_code': code
+        }
+        result = self.send_request(method, url, data)
+        return result
+
+    def get_sns_token(self, openid, persistent_code):
+        """
+        获取SNSToken
+        """
+        method = 'POST'
+        url = 'https://oapi.dingtalk.com/sns/get_sns_token' + self.get_sns_access_token_param()
+        data = {
+            'openid': openid,
+            'persistent_code': persistent_code
+        }
+        result = self.send_request(method, url, data)
+        return result
+
+    def get_sns_user_info(self, sns_token):
+        """
+        获取SNSUserInfo
+        """
+        method = 'GET'
+        url = 'https://oapi.dingtalk.com/sns/getuserinfo'
+        params = {
+            'sns_token': sns_token,
+        }
+        result = self.send_request(method, url, params)
+        return result
+
+    def get_user_id_by_unionid(self, unionid):
+        """
+        通过UnionId获取UserId
+        """
+        method = 'GET'
+        url = 'https://oapi.dingtalk.com/user/getUseridByUnionid'
+        params = {
+            'access_token': self.get_access_token(),
+            'unionid': unionid
         }
         result = self.send_request(method, url, params)
         return result
@@ -172,7 +243,7 @@ class DingTalk:
         result = self.send_request(method, url, data)
         return result
 
-    def get_departments(self, id):
+    def get_departments(self, id, fetch_child=False):
         """
         根据Id获取部门列表
         """
@@ -181,7 +252,20 @@ class DingTalk:
         params = {
             'access_token': self.get_access_token(),
             'id': id,
-            'fetch_child': False
+            'fetch_child': fetch_child
+        }
+        result = self.send_request(method, url, params)
+        return result
+
+    def get_department_info(self, id):
+        """
+        根据Id获取部门信息
+        """
+        method = 'GET'
+        url = 'https://oapi.dingtalk.com/department/get'
+        params = {
+            'access_token': self.get_access_token(),
+            'id': id
         }
         result = self.send_request(method, url, params)
         return result

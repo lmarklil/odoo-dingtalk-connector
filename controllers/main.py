@@ -16,27 +16,44 @@ class IndexController(http.Controller):
         # 获取配置信息
         config = request.env['ir.config_parameter'].sudo()
         # 返回钉钉API服务
-        return DingTalk(config.get_param('dingtalk_app_key'), config.get_param('dingtalk_app_secret'))
+        return DingTalk(config.get_param('dingtalk_app_key'), config.get_param('dingtalk_app_secret'),
+                        config.get_param('dingtalk_sns_app_id'), config.get_param('dingtalk_sns_app_secret'))
 
     @http.route(BASE_URL + '/sign/in', type='http', auth='none')
     def sign_in(self, **kw):
         """
         钉钉免登入口
         """
-        return request.render('dingtalk_connector.sign_in')
+        config = request.env['ir.config_parameter'].sudo()
+        data = {
+            'corp_id': config.get_param('dingtalk_corp_id')
+        }
+        return request.render('dingtalk_connector.sign_in', data)
 
     @http.route(BASE_URL + '/auth', type='http', auth='none')
     def auth(self, **kw):
         """
         钉钉免登认证
         """
-        auth_code = kw.get('authCode')
+        authCode = kw.get('authCode')
+        code = kw.get('code')
         dingtalk = self.get_dingtalk()
-        try:
-            user_info = dingtalk.get_user_info_by_auth_code(auth_code)
-            user_id = user_info.get('userid')
-        except:
-            return http.local_redirect('/web/login')
+        # 检测是通过扫码跳转还是免登跳转
+        if authCode:
+            # 免登跳转处理
+            try:
+                user_info = dingtalk.get_user_info_by_auth_code(authCode)
+                user_id = user_info.get('userid')
+            except:
+                return http.local_redirect('/web/login')
+        elif code:
+            # 扫码跳转处理
+            try:
+                persistent_code_data = dingtalk.get_sns_persistent_code(code)
+                unionid = persistent_code_data.get('unionid')
+                user_id = dingtalk.get_user_id_by_unionid(unionid).get('userid')
+            except:
+                return http.local_redirect('/web/login')
         # 检查钉钉用户是否存在
         if user_id:
             # 根据钉钉Id判断Odoo用户是否存在，存在即登陆
@@ -46,40 +63,14 @@ class IndexController(http.Controller):
                 request.session.dingtalk_auth = True
                 # 生成登陆凭证
                 request.session.authenticate(request.session.db, user.login, user_id)
+                return http.local_redirect('/web')
             else:
-                request.session.dingtalk_id = user_id
-                return http.local_redirect('/dingtalk/sign/up?name=' + user_info.get('name'))
+                # 自动注册
+                password = 'dingtalk_id:' + user_id + '|key:' + str(random.randint(100000, 999999))
+                fail = request.env['res.users'].sudo().create_user_by_dingtalk_id(user_id, password)
+                if not fail:
+                    return http.local_redirect('/dingtalk/sign/in')
         return http.local_redirect('/web/login')
-
-    @http.route(BASE_URL + '/sign/up', type='http', auth='none')
-    def sign_up(self, **kw):
-        """
-        钉钉用户注册入口
-        """
-        # 判断是否从钉钉进入
-        data = {
-            'name': kw.get('name')
-        }
-        if request.session.dingtalk_id:
-            return request.render('dingtalk_connector.sign_up', data)
-        else:
-            return http.local_redirect('/web/login')
-
-    @http.route(BASE_URL + '/register', type='http', auth='none', methods=['POST'], csrf=False)
-    def register(self, **kw):
-        """
-        钉钉用户注册数据处理
-        """
-        # 判断是否从钉钉进入
-        if request.session.dingtalk_id:
-            # 获取钉钉用户信息
-            password = kw.get('password')
-            user_id = request.session.dingtalk_id
-            request.env['res.users'].sudo().create_user_by_dingtalk_id(user_id, password)
-            request.session.dingtalk_id = None
-            return http.local_redirect('/dingtalk/sign/in')
-        else:
-            return http.local_redirect('/web/login')
 
     @http.route(BASE_URL + '/call_back', type='json', auth='none', methods=['POST'], csrf=False)
     def delete_user(self, **kw):
@@ -116,3 +107,15 @@ class IndexController(http.Controller):
             return result
 
         return result()
+
+    @http.route(BASE_URL + '/qrcode', type='http', auth='none')
+    def qrcode(self, **kw):
+        """
+        钉钉扫码登陆页面
+        """
+        config = request.env['ir.config_parameter'].sudo()
+        data = {
+            'app_id': config.get_param('dingtalk_sns_app_id'),
+            'redirect_url': request.httprequest.host_url + 'dingtalk/auth'
+        }
+        return request.render('dingtalk_connector.qrcode_login', data)

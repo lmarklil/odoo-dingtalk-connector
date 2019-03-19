@@ -13,6 +13,8 @@ class ResConfigSettings(models.TransientModel):
     dingtalk_corp_id = fields.Char(string='钉钉corpId')
     dingtalk_app_key = fields.Char(string='钉钉AppKey')
     dingtalk_app_secret = fields.Char(string='钉钉AppSecret')
+    dingtalk_sns_app_id = fields.Char(string='钉钉SNSAppId')
+    dingtalk_sns_app_secret = fields.Char(string='钉钉SNSAppSecret')
 
     @api.multi
     def set_values(self):
@@ -20,7 +22,8 @@ class ResConfigSettings(models.TransientModel):
         params = self.env['ir.config_parameter'].sudo()
         params.set_param('dingtalk_corp_id', self[0].dingtalk_corp_id)
         params.set_param('dingtalk_app_key', self[0].dingtalk_app_key)
-        params.set_param('dingtalk_app_secret', self[0].dingtalk_app_secret)
+        params.set_param('dingtalk_sns_app_id', self[0].dingtalk_sns_app_id)
+        params.set_param('dingtalk_sns_app_secret', self[0].dingtalk_sns_app_secret)
 
     @api.model
     def get_values(self):
@@ -29,7 +32,9 @@ class ResConfigSettings(models.TransientModel):
         res.update(
             dingtalk_corp_id=params.get_param('dingtalk_corp_id'),
             dingtalk_app_key=params.get_param('dingtalk_app_key'),
-            dingtalk_app_secret=params.get_param('dingtalk_app_secret')
+            dingtalk_app_secret=params.get_param('dingtalk_app_secret'),
+            dingtalk_sns_app_id=params.get_param('dingtalk_sns_app_id'),
+            dingtalk_sns_app_secret=params.get_param('dingtalk_sns_app_secret')
         )
         return res
 
@@ -71,9 +76,6 @@ class ResConfigSettings(models.TransientModel):
         手动同步成员与部门
         """
         try:
-            # 同步部门
-            self.env['hr.department'].sudo().create_departments_from_dingtalk()
-            # 同步成员
             self.env['res.users'].sudo().create_users_from_dingtalk()
         except Exception as e:
             raise UserError(_('同步失败！\n\n错误原因：\n' + str(e)))

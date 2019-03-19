@@ -1,102 +1,64 @@
 <odoo>
     <template id="dingtalk_connector.sign_in">
+        <style>
+            #loading{
+            margin: 100px auto 0 auto;
+            width: 300px;
+            font-size: 18px;
+            text-align: center;
+            }
+        </style>
+        <div id="loading">正在登陆</div>
+        <div id="corp-id" style="display:none;">
+            <t t-esc="corp_id"/>
+        </div>
+        <script src="//g.alicdn.com/dingding/dingtalk-jsapi/2.0.57/dingtalk.open.js"></script>
         <script>
             window.onload = function() {
-                var ua = window.navigator.userAgent.toLowerCase();
-                // 检测UA
-                if(ua.match(/DingTalk/i) == "dingtalk"){
-                    // 调用钉钉JSAPI
-                    dd.getAuthCode({
-                        success: (res)=>{
-                            windows.location = "/dingtalk/auth?authCode=" + res.authCode;
-                        },
-                        fail: (err)=>{
-                            alert("系统错误，请重试。");
-                        }
-                    });
-                } else {
-                    window.location = "/";
-                }
+            var ua = window.navigator.userAgent.toLowerCase();
+            // 检测UA
+            if(ua.match(/DingTalk/i) == "dingtalk"){
+            // 获取CorpId
+            var corpId = document.querySelector("#corp-id").innerHTML.trim();
+            // 调用钉钉JSAPI
+            dd.runtime.permission.requestAuthCode({
+            corpId,
+            onSuccess: function(result) {
+            window.location.replace("/dingtalk/auth?authCode=" + result.code);
+            },
+            onFail: function(err) {
+            alert("系统错误，请使用账号密码登陆。");
+            window.location.replace("/web/login");
+            }
+            })
+            } else {
+            window.location.replace("/web/login");
+            }
             }
         </script>
     </template>
-    <template id="dingtalk_connector.sign_up">
-		<style>
-			main {
-				margin:auto;
-				margin-top: 60px;
-				padding: 20px;
-				max-width: 300px;
-			}
-			input {
-				display: block;
-				box-sizing: border-box;
-				padding: 10px;
-                width: 100%;
-                font-size: 18px;
-				border: 1px #aaa solid;
-                border-radius: 2px;
-			}
-            button {
-				display:block;
-				margin: auto;
-				margin-top: 60px;
-                padding: 10px 0;
-				width: 100%;
-				color: #fff;
-				background: #08f;
-				border: none;
-                border-radius: 2px;
-                transition: 0.2s;
-			}
-            button:hover {
-                filter: brightness(80%);
+    <template id="login_layout" inherit_id="web.login_layout" name="login_layout_inherit">
+        <xpath expr="//div[hasclass('border-top')]" position="replace">
+            <div class="text-center">
+                <a href="/dingtalk/qrcode">
+                    钉钉扫码登陆
+                </a>
+            </div>
+        </xpath>
+    </template>
+    <template id="qrcode_login">
+        <div id="app-id" style="display:none;">
+            <t t-esc="app_id"/>
+        </div>
+        <div id="redirect-url" style="display:none;">
+            <t t-esc="redirect_url"/>
+        </div>
+        <script>
+            window.onload = function() {
+            var appId = document.querySelector("#app-id").innerHTML.trim();
+            var redirectURL = document.querySelector("#redirect-url").innerHTML.trim();
+            window.location.replace("https://oapi.dingtalk.com/connect/qrconnect?appid="+appId+"&amp;response_type=code&amp;scope=snsapi_login&amp;state=STATE&amp;redirect_uri="+redirectURL);
             }
-            .button-disabled {
-                color: #aaa;
-                background: #eee;
-            }
-            input:focus, button:focus {
-                outline: none;
-            }
-		</style>
-		<main>
-			<h1>Hi!<t t-esc="name"/></h1>
-            <h4>您的Odoo账号已从钉钉同步，接下来请设置您的个人密码。</h4>
-			<form name="sign-up" method="post" action="/dingtalk/register" onsubmit="return validatePassword()">
-				<input id="password" name="password" type="password"/>
-				<button id="button" type="submit">继续</button>
-			</form>
-		</main>
-		<script>
-			function $(target) {
-				return document.querySelector(target);
-			}
-			function validatePassword(){
-				passwordInput = $("#password")
-				button = $("#button");
-				switchStatus(passwordInput, false);
-				switchStatus(button, false);
-                button.classList.add("button-disabled");
-                button.innerHTML = "请稍候";
-				if(passwordInput.value.length>=8) {
-					return true;
-				} else {
-                    alert('请设置8位或以上字符的密码');
-					switchStatus(passwordInput, true);
-					switchStatus(button, true);
-                    button.classList.remove("button-disabled");
-                    button.innerHTML = "继续";
-					return false;
-                }
-			}
-			function switchStatus(target, status) {
-				if(!status) {
-					target.setAttribute("disabled", "true");
-				} else {
-					target.removeAttribute("disabled");
-				}
-			}
-		</script>
-	</template>
+        </script>
+    </template>
 </odoo>
